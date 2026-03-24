@@ -1,0 +1,49 @@
+# Starship prompt config — clean, fast, Ghostty-friendly
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$python\
+$nodejs\
+$rust\
+$cmd_duration\
+$line_break\
+$character"""
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "cyan bold"
+
+[git_branch]
+format = "[$symbol$branch]($style) "
+style = "green"
+
+[git_status]
+format = '([$all_status$ahead_behind]($style) )'
+style = "yellow"
+
+[python]
+format = '[${symbol}${version}]($style) '
+symbol = " "
+style = "blue"
+
+[nodejs]
+format = '[${symbol}${version}]($style) '
+symbol = " "
+style = "green"
+
+[rust]
+format = '[${symbol}${version}]($style) '
+symbol = " "
+style = "red"
+
+[cmd_duration]
+min_time = 2_000
+format = "[$duration]($style) "
+style = "yellow dimmed"
+
+[character]
+success_symbol = "[❯](green)"
+error_symbol = "[❯](red)"

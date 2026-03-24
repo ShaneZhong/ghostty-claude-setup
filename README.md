@@ -1,6 +1,6 @@
 # Ghostty + Claude Code Setup
 
-A complete Ghostty terminal configuration optimized for Claude Code development workflows.
+A complete terminal setup for Claude Code development: Ghostty terminal, Starship prompt, yazi file manager, and a rich statusline.
 
 Based on [BravoHenry's Ghostty终端配置指南](https://z1han.com) and [Peter Steinberger's AI dev workflow](https://steipete.me/posts/2025/optimal-ai-development-workflow).
 
@@ -42,7 +42,29 @@ Or run the setup script which also installs the statusline:
 ./setup.sh
 ```
 
-### 4. Install yazi (terminal file manager)
+### 4. Install Starship prompt
+
+A fast, minimal prompt that shows git status, language versions, and command duration — with zero Claude Code conflicts (unlike Powerlevel10k).
+
+```bash
+brew install starship
+```
+
+Copy the config:
+
+```bash
+cp starship.toml ~/.config/starship.toml
+```
+
+Add to `~/.zshrc` (at the end):
+
+```bash
+eval "$(starship init zsh)"
+```
+
+**Why Starship over Powerlevel10k?** P10k's instant prompt feature [causes Claude Code timeouts and parsing errors](https://github.com/anthropics/claude-code/issues/5428). Starship has zero known conflicts.
+
+### 5. Install yazi (terminal file manager)
 
 Browse files, preview PDFs, images, videos, and code with syntax highlighting — all inline in Ghostty via the Kitty graphics protocol.
 
@@ -52,7 +74,7 @@ brew install yazi
 
 Usage: run `yazi` in Ghostty, navigate with vim keys (`h/j/k/l`), `Enter` to open, `q` to quit. See [yazi-shortcuts.md](yazi-shortcuts.md) for the full reference.
 
-### 5. Install the Claude Code statusline (optional)
+### 6. Install the Claude Code statusline (optional)
 
 The statusline shows context usage %, model name, session duration, git status, PR links, and CI status in your Claude Code status bar.
 
@@ -172,8 +194,9 @@ Add to `~/.claude/settings.json`:
 | File | Description |
 |------|-------------|
 | `config.ghostty` | Ghostty config (copy to `~/.config/ghostty/config`) |
+| `starship.toml` | Starship prompt config (copy to `~/.config/starship.toml`) |
 | `statusline-worktree.js` | Claude Code statusline script (Steipete's design) |
-| `setup.sh` | Installer script |
+| `setup.sh` | Full installer script |
 | `shortcuts.md` | Ghostty keyboard shortcuts reference |
 | `yazi-shortcuts.md` | Yazi keyboard shortcuts reference |
 
