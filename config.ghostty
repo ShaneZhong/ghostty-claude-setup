@@ -71,6 +71,10 @@ resize-overlay-duration = 500ms
 clipboard-paste-protection = true
 clipboard-paste-bracketed-safe = true
 
+# ─── macOS Option Key ─────────────────────────────────────────────────────────
+# Send Option as Alt (escape sequence) instead of macOS special characters
+macos-option-as-alt = true
+
 # ─── Keybinds ───────────────────────────────────────────────────────────────────
 keybind = super+shift+r=prompt_tab_title
 

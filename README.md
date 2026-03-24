@@ -137,6 +137,10 @@ Add to `~/.claude/settings.json`:
 - **10M line scrollback** — enough for any build log
 - Resize overlay shows dimensions briefly in the bottom-right corner
 
+### macOS Option Key
+- **`macos-option-as-alt = true`** — both Option keys send Alt/escape sequences instead of macOS special characters (e.g., `Option+P` sends `Alt+P` instead of `π`)
+- Required for tools like Claude Code that use `Option+` keybindings
+
 ### Security
 - **Paste protection**: confirms before pasting multi-line content (prevents hidden `rm -rf /` attacks)
 - **Bracketed paste safe**: prevents escape sequence injection
