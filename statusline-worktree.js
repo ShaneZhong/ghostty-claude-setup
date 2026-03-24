@@ -32,7 +32,15 @@ const exec = (cmd, cwd = null) => {
 };
 
 // Fast context percentage calculation
-function getContextPct(transcriptPath) {
+function getContextPct(transcriptPath, input) {
+  // Use the pre-calculated percentage from Claude Code if available
+  const preCalc = input?.context_window?.used_percentage;
+  if (preCalc != null) {
+    const pct = parseFloat(preCalc);
+    return pct >= 90 ? pct.toFixed(1) : Math.round(pct).toString();
+  }
+
+  // Fallback: calculate from transcript
   if (!transcriptPath) return "0";
   try {
     const data = fs.readFileSync(transcriptPath, "utf8");
@@ -54,9 +62,11 @@ function getContextPct(transcriptPath) {
       } catch {}
     }
     if (latestUsage) {
-      const used = (latestUsage.input_tokens || 0) + (latestUsage.output_tokens || 0) +
+      // Use server-reported context window size, default to 1M for Opus
+      const contextWindow = latestUsage.context_window || 1000000;
+      const used = (latestUsage.input_tokens || 0) +
         (latestUsage.cache_read_input_tokens || 0) + (latestUsage.cache_creation_input_tokens || 0);
-      const pct = Math.min(100, (used * 100) / 156000);
+      const pct = Math.min(100, (used * 100) / contextWindow);
       return pct >= 90 ? pct.toFixed(1) : Math.round(pct).toString();
     }
   } catch {}
@@ -253,6 +263,40 @@ function getPRStatus(branch, workingDir) {
   return status.trim();
 }
 
+// Get active agent team members
+function getTeamStatus(sessionId) {
+  if (!sessionId) return '';
+  const teamsDir = path.join(process.env.HOME, '.claude', 'teams');
+  try {
+    if (!fs.existsSync(teamsDir)) return '';
+    const teams = fs.readdirSync(teamsDir);
+    for (const team of teams) {
+      const configPath = path.join(teamsDir, team, 'config.json');
+      if (!fs.existsSync(configPath)) continue;
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        // Match team to current session by lead session ID
+        if (config.leadSessionId !== sessionId) continue;
+        const members = (config.members || []).filter(m => m.name !== 'team-lead');
+        if (!members.length) return '';
+        const parts = members.map(m => {
+          // Treat members as active if they exist (isActive may not be set)
+          const active = m.isActive !== false;
+          const icon = active ? `${c.g}\u25B6${c.x}` : `${c.gr}\u25CB${c.x}`;
+          const nameColor = m.color === 'blue' ? c.sb :
+                            m.color === 'green' ? c.g :
+                            m.color === 'red' ? c.r :
+                            m.color === 'yellow' ? c.y :
+                            m.color === 'magenta' ? c.m : c.cy;
+          return `${nameColor}${m.name}${c.x}${icon}`;
+        });
+        return ` ${c.gr}\u2022 \u{1F465}${c.x} ${parts.join(' ')}`;
+      } catch {}
+    }
+  } catch {}
+  return '';
+}
+
 // Main statusline function
 function statusline() {
   const args = process.argv.slice(2);
@@ -281,7 +325,7 @@ function statusline() {
     } else {
       abbrev = model.includes('Opus') ? 'Opus' : model.includes('Sonnet') ? 'Sonnet' : model.includes('Haiku') ? 'Haiku' : '?';
     }
-    const pct = getContextPct(transcriptPath);
+    const pct = getContextPct(transcriptPath, input);
     const pctNum = parseFloat(pct);
     const pctColor = pctNum >= 90 ? c.r : pctNum >= 70 ? c.o : pctNum >= 50 ? c.y : c.gr;
     const duration = getSessionDuration(transcriptPath);
@@ -364,20 +408,24 @@ function statusline() {
   }
   const sessionIdDisplay = sessionId ? ` ${c.gr}\u2022 ${sessionId}${c.x}` : '';
 
+  // Agent team status
+  const teamDisplay = getTeamStatus(sessionId);
+
   // Format final output
   const prDisplay = prUrl ? ` ${c.gr}\u2022 ${prUrl}${c.x}` : '';
   const prStatusDisplay = prStatus ? ` ${prStatus}` : '';
+  const suffix = `${modelDisplay}${teamDisplay}${sessionIdDisplay}${sessionSummary}${prDisplay}${prStatusDisplay}`;
 
   const isWorktree = gitDir.includes('/.git/worktrees/');
   if (isWorktree) {
     const worktreeName = path.basename(displayDir.replace(/ $/, ''));
     const branchDisplay = branch === worktreeName ? '\u21DF' : `${branch}\u21DF`;
-    return `${c.cy}${displayDir}${c.x}${c.m}[${branchDisplay}${gitStatus}]${c.x}${modelDisplay}${sessionIdDisplay}${sessionSummary}${prDisplay}${prStatusDisplay}`;
+    return `${c.cy}${displayDir}${c.x}${c.m}[${branchDisplay}${gitStatus}]${c.x}${suffix}`;
   } else {
     if (!displayDir) {
-      return `${c.g}[${branch}${gitStatus}]${c.x}${modelDisplay}${sessionIdDisplay}${sessionSummary}${prDisplay}${prStatusDisplay}`;
+      return `${c.g}[${branch}${gitStatus}]${c.x}${suffix}`;
     } else {
-      return `${c.cy}${displayDir}${c.x}${c.g}[${branch}${gitStatus}]${c.x}${modelDisplay}${sessionIdDisplay}${sessionSummary}${prDisplay}${prStatusDisplay}`;
+      return `${c.cy}${displayDir}${c.x}${c.g}[${branch}${gitStatus}]${c.x}${suffix}`;
     }
   }
 }
